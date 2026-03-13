@@ -1,0 +1,49 @@
+openapi: 3.0.3
+info:
+  title: Billing / Subscription Service API
+  version: 1.0.0
+paths:
+  /plans:
+    get:
+      summary: List subscription plans
+      responses:
+        "200":
+          description: Plans
+  /subscriptions:
+    get:
+      summary: Get current user's subscription
+      responses:
+        "200":
+          description: Subscription
+    post:
+      summary: Create or change subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planId]
+              properties:
+                planId:
+                  type: string
+      responses:
+        "201":
+          description: Subscription created or updated
+  /payments:
+    post:
+      summary: Create payment intent for subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subscriptionId]
+              properties:
+                subscriptionId:
+                  type: string
+      responses:
+        "201":
+          description: Payment initiated
+

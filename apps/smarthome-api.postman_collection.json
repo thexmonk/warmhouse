@@ -189,6 +189,69 @@
                 "description": "Update a sensor's value and status"
             },
             "response": []
+        },
+        {
+            "name": "Create Sensor Telemetry",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"value\": 23.5,\n    \"unit\": \"C\",\n    \"status\": \"ok\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/api/v1/sensors/1/telemetry",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "v1",
+                        "sensors",
+                        "1",
+                        "telemetry"
+                    ]
+                },
+                "description": "Create a telemetry record for sensor 1 via the Smart Home API (proxied to telemetry-service)"
+            },
+            "response": []
+        },
+        {
+            "name": "Get Sensor Telemetry",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8080/api/v1/sensors/1/telemetry?limit=5",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "v1",
+                        "sensors",
+                        "1",
+                        "telemetry"
+                    ],
+                    "query": [
+                        {
+                            "key": "limit",
+                            "value": "5"
+                        }
+                    ]
+                },
+                "description": "Get latest telemetry records for sensor 1 via the Smart Home API (proxied to telemetry-service)"
+            },
+            "response": []
         }
     ],
     "event": [

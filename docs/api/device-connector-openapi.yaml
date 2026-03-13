@@ -1,0 +1,30 @@
+openapi: 3.0.3
+info:
+  title: Device Connector Service API
+  version: 1.0.0
+paths:
+  /internal/devices/{deviceId}/apply-command:
+    post:
+      summary: Apply command to physical device (internal)
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actionType]
+              properties:
+                actionType:
+                  type: string
+                actionValue:
+                  type: string
+      responses:
+        "202":
+          description: Command accepted
+
