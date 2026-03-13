@@ -1,0 +1,58 @@
+asyncapi: 2.6.0
+info:
+  title: Smart Home Events
+  version: 1.0.0
+
+channels:
+  device.state.changed:
+    description: События об изменении состояния устройства
+    subscribe:
+      summary: Device Management и Automation слушают изменения
+      message:
+        name: DeviceStateChanged
+        payload:
+          type: object
+          properties:
+            deviceId:
+              type: string
+            value:
+              type: number
+            status:
+              type: string
+            occurredAt:
+              type: string
+              format: date-time
+
+  automation.rule.triggered:
+    description: Событие о том, что правило сработало
+    publish:
+      summary: Automation Service публикует
+      message:
+        name: AutomationRuleTriggered
+        payload:
+          type: object
+          properties:
+            ruleId:
+              type: string
+            homeId:
+              type: string
+            triggeredAt:
+              type: string
+              format: date-time
+
+  device.command:
+    description: Команды к устройствам
+    subscribe:
+      summary: Device Connector слушает команды
+      message:
+        name: DeviceCommand
+        payload:
+          type: object
+          properties:
+            deviceId:
+              type: string
+            actionType:
+              type: string
+            actionValue:
+              type: string
+

@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  title: Automation / Rules Service API
+  version: 1.0.0
+paths:
+  /homes/{homeId}/rules:
+    get:
+      summary: List automation rules for home
+      parameters:
+        - in: path
+          name: homeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rules
+    post:
+      summary: Create automation rule
+      parameters:
+        - in: path
+          name: homeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, conditions, actions]
+              properties:
+                name:
+                  type: string
+                enabled:
+                  type: boolean
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      deviceId:
+                        type: string
+                      metric:
+                        type: string
+                      operator:
+                        type: string
+                      threshold:
+                        type: number
+                actions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      targetDeviceId:
+                        type: string
+                      actionType:
+                        type: string
+                      actionValue:
+                        type: string
+      responses:
+        "201":
+          description: Rule created
+  /rules/{ruleId}/toggle:
+    post:
+      summary: Enable or disable rule
+      parameters:
+        - in: path
+          name: ruleId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+

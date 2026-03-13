@@ -1,0 +1,89 @@
+openapi: 3.0.3
+info:
+  title: Device Management Service API
+  version: 1.0.0
+paths:
+  /homes/{homeId}/devices:
+    get:
+      summary: List devices in home
+      parameters:
+        - in: path
+          name: homeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Devices
+    post:
+      summary: Register new device in home
+      parameters:
+        - in: path
+          name: homeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, name]
+              properties:
+                type:
+                  type: string  # TEMPERATURE_SENSOR, LIGHT, DOOR_LOCK
+                name:
+                  type: string
+                location:
+                  type: string
+      responses:
+        "201":
+          description: Device created
+  /devices/{deviceId}:
+    get:
+      summary: Get device
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Device
+    delete:
+      summary: Delete device
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+  /devices/{deviceId}/state:
+    patch:
+      summary: Update desired device state (e.g. temperature, light on/off)
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: number
+                mode:
+                  type: string
+      responses:
+        "202":
+          description: State change accepted
+

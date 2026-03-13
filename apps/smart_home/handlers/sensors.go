@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
+	"time"
 
 	"smarthome/db"
 	"smarthome/models"
@@ -19,6 +23,8 @@ type SensorHandler struct {
 	DB                 *db.DB
 	TemperatureService *services.TemperatureService
 }
+
+const telemetryServiceBaseURL = "http://telemetry-service:8090"
 
 // NewSensorHandler creates a new SensorHandler
 func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService) *SensorHandler {
@@ -34,6 +40,8 @@ func (h *SensorHandler) RegisterRoutes(router *gin.RouterGroup) {
 	{
 		sensors.GET("", h.GetSensors)
 		sensors.GET("/:id", h.GetSensorByID)
+		sensors.GET("/:id/telemetry", h.GetSensorTelemetry)
+		sensors.POST("/:id/telemetry", h.CreateSensorTelemetry)
 		sensors.POST("", h.CreateSensor)
 		sensors.PUT("/:id", h.UpdateSensor)
 		sensors.DELETE("/:id", h.DeleteSensor)
@@ -211,3 +219,125 @@ func (h *SensorHandler) UpdateSensorValue(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Sensor value updated successfully"})
 }
+
+// telemetryRequest represents the payload sent to the telemetry service
+type telemetryRequest struct {
+	SensorID  string     `json:"sensorId"`
+	Value     float64    `json:"value"`
+	Unit      string     `json:"unit"`
+	Status    string     `json:"status"`
+	Timestamp *time.Time `json:"timestamp,omitempty"`
+}
+
+// telemetryCreateRequest represents the request body accepted by the proxy endpoint
+type telemetryCreateRequest struct {
+	Value     float64    `json:"value" binding:"required"`
+	Unit      string     `json:"unit"`
+	Status    string     `json:"status"`
+	Timestamp *time.Time `json:"timestamp,omitempty"`
+}
+
+// CreateSensorTelemetry handles POST /api/v1/sensors/:id/telemetry
+// and proxies the request to the telemetry service
+func (h *SensorHandler) CreateSensorTelemetry(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sensor ID"})
+		return
+	}
+
+	var req telemetryCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.Unit == "" {
+		req.Unit = "C"
+	}
+	if req.Status == "" {
+		req.Status = "ok"
+	}
+
+	payload := telemetryRequest{
+		SensorID:  id,
+		Value:     req.Value,
+		Unit:      req.Unit,
+		Status:    req.Status,
+		Timestamp: req.Timestamp,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal telemetry payload"})
+		return
+	}
+
+	resp, err := http.Post(
+		fmt.Sprintf("%s/telemetry", telemetryServiceBaseURL),
+		"application/json",
+		bytes.NewReader(body),
+	)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("Failed to reach telemetry service: %v", err)})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("Telemetry service returned status %d", resp.StatusCode)})
+		return
+	}
+
+	var telemetryResp map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&telemetryResp); err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("Failed to decode telemetry response: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusCreated, telemetryResp)
+}
+
+// GetSensorTelemetry handles GET /api/v1/sensors/:id/telemetry
+// and proxies the request to the telemetry service
+func (h *SensorHandler) GetSensorTelemetry(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sensor ID"})
+		return
+	}
+
+	limit := c.DefaultQuery("limit", "10")
+
+	telemetryURL, err := url.Parse(fmt.Sprintf("%s/telemetry", telemetryServiceBaseURL))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to build telemetry URL"})
+		return
+	}
+
+	q := telemetryURL.Query()
+	q.Set("sensorId", id)
+	q.Set("limit", limit)
+	telemetryURL.RawQuery = q.Encode()
+
+	resp, err := http.Get(telemetryURL.String())
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("Failed to reach telemetry service: %v", err)})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("Telemetry service returned status %d", resp.StatusCode)})
+		return
+	}
+
+	var telemetryResp any
+	if err := json.NewDecoder(resp.Body).Decode(&telemetryResp); err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("Failed to decode telemetry response: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, telemetryResp)
+}
+

@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: User Profile Service API
+  version: 1.0.0
+paths:
+  /users/me:
+    get:
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Profile
+  /homes:
+    get:
+      summary: List homes of current user
+      responses:
+        "200":
+          description: Homes list
+    post:
+      summary: Create home
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                address:
+                  type: string
+      responses:
+        "201":
+          description: Created
+  /homes/{homeId}:
+    get:
+      summary: Get home by id
+      parameters:
+        - in: path
+          name: homeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Home
+
